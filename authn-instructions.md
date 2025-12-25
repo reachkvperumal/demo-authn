@@ -1,3 +1,17 @@
+<!--
+Copilot Instruction:
+Generate a CALM-compliant JSON architecture file named `passkey-auth.calm.json` based on this specification.
+Follow the structure, controls, and validation hints from `calm-sample.json`.
+Ensure the JSON includes `$schema` pointing to `https://finos.org/calm/schema.json` and validates against CALM schema.
+Include:
+- Metadata
+- Nodes with interfaces
+- Relationships with protocols
+- Controls with CALM control URLs
+- ADRs (Architecture Decision Records)
+- Flows
+-->
+
 # CALM Architecture Specification for Passkey Authentication
 
 ## Metadata
