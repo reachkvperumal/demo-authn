@@ -1,0 +1,201 @@
+{
+  "$schema": "https://calm.finos.org/release/1.1/meta/calm.json",
+  "unique-id": "passkey-webauthn-architecture",
+  "name": "Passkey-WebAuthN-Architecture",
+  "description": "Passwordless authentication using Passkeys and WebAuthn",
+  "metadata": [
+    {
+      "owner": "Identity Team",
+      "environment": "production",
+      "costCenter": "CC-1234",
+      "compliance": "PCI-DSS"
+    }
+  ],
+  "nodes": [
+    {
+      "unique-id": "web-client",
+      "node-type": "webclient",
+      "name": "Web Client",
+      "description": "Browser client that initiates WebAuthn ceremonies for passkey-based authentication.",
+      "interfaces": [
+        {
+          "unique-id": "web-client-webauthn"
+        }
+      ]
+    },
+    {
+      "unique-id": "api-gateway",
+      "node-type": "service",
+      "name": "API Gateway",
+      "description": "Edge gateway that terminates HTTPS and routes authentication requests to internal services.",
+      "interfaces": [
+        {
+          "unique-id": "api-gateway-https"
+        },
+        {
+          "unique-id": "api-gateway-internal-https"
+        }
+      ]
+    },
+    {
+      "unique-id": "auth-service",
+      "node-type": "service",
+      "name": "Authentication Service",
+      "description": "Validates WebAuthn assertions, interacts with passkey storage, and performs OIDC token exchanges.",
+      "interfaces": [
+        {
+          "unique-id": "auth-service-https"
+        },
+        {
+          "unique-id": "auth-service-mtls"
+        },
+        {
+          "unique-id": "auth-service-oidc-client"
+        }
+      ]
+    },
+    {
+      "unique-id": "passkey-manager",
+      "node-type": "service",
+      "name": "Passkey Manager",
+      "description": "Stores and manages passkey public keys and metadata for WebAuthn verification.",
+      "interfaces": [
+        {
+          "unique-id": "passkey-manager-mtls"
+        }
+      ]
+    },
+    {
+      "unique-id": "identity-provider",
+      "node-type": "service",
+      "name": "Identity Provider",
+      "description": "OIDC provider that issues tokens after successful authentication.",
+      "interfaces": [
+        {
+          "unique-id": "identity-provider-oidc"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "web-to-gateway",
+      "description": "Client sends authentication requests to gateway.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "web-client",
+            "interfaces": ["web-client-webauthn"]
+          },
+          "destination": {
+            "node": "api-gateway",
+            "interfaces": ["api-gateway-https"]
+          }
+        }
+      },
+      "protocol": "HTTPS"
+    },
+    {
+      "unique-id": "gateway-to-auth",
+      "description": "Gateway forwards authentication requests to authentication service.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "api-gateway",
+            "interfaces": ["api-gateway-internal-https"]
+          },
+          "destination": {
+            "node": "auth-service",
+            "interfaces": ["auth-service-https"]
+          }
+        }
+      },
+      "protocol": "HTTPS"
+    },
+    {
+      "unique-id": "auth-to-passkey",
+      "description": "Authentication service verifies and manages passkey material via passkey manager.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "auth-service",
+            "interfaces": ["auth-service-mtls"]
+          },
+          "destination": {
+            "node": "passkey-manager",
+            "interfaces": ["passkey-manager-mtls"]
+          }
+        }
+      },
+      "protocol": "mTLS"
+    },
+    {
+      "unique-id": "auth-to-idp",
+      "description": "Authentication service exchanges authorization context for OIDC tokens.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "auth-service",
+            "interfaces": ["auth-service-oidc-client"]
+          },
+          "destination": {
+            "node": "identity-provider",
+            "interfaces": ["identity-provider-oidc"]
+          }
+        }
+      },
+      "protocol": "HTTPS"
+    }
+  ],
+  "flows": [
+    {
+      "unique-id": "auth-flow-001",
+      "name": "Authentication Flow",
+      "description": "Sequence of steps for passwordless authentication using Passkeys and WebAuthn",
+      "transitions": [
+        {
+          "relationship-unique-id": "web-to-gateway",
+          "sequence-number": 1,
+          "description": "Send authentication request",
+          "direction": "source-to-destination"
+        },
+        {
+          "relationship-unique-id": "gateway-to-auth",
+          "sequence-number": 2,
+          "description": "Forward request",
+          "direction": "source-to-destination"
+        },
+        {
+          "relationship-unique-id": "auth-to-passkey",
+          "sequence-number": 3,
+          "description": "Validate passkey",
+          "direction": "source-to-destination"
+        },
+        {
+          "relationship-unique-id": "auth-to-idp",
+          "sequence-number": 4,
+          "description": "OIDC token exchange",
+          "direction": "source-to-destination"
+        },
+        {
+          "relationship-unique-id": "auth-to-idp",
+          "sequence-number": 5,
+          "description": "Return token",
+          "direction": "destination-to-source"
+        },
+        {
+          "relationship-unique-id": "gateway-to-auth",
+          "sequence-number": 6,
+          "description": "Return response",
+          "direction": "destination-to-source"
+        },
+        {
+          "relationship-unique-id": "web-to-gateway",
+          "sequence-number": 7,
+          "description": "Deliver authentication result",
+          "direction": "destination-to-source"
+        }
+      ]
+    }
+  ]
+}
