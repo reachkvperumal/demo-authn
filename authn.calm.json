@@ -1,70 +1,406 @@
 {
-  "$schema": "https://finos.org/calm/schema.json",
+  "$schema": "https://calm.finos.org/release/1.1/meta/calm.json",
   "unique-id": "passkey-webauthn-architecture",
   "name": "Passkey-WebAuthN-Architecture",
   "description": "Passwordless authentication using Passkeys and WebAuthn",
-  "metadata": [
+  "metadata": {
+    "name": "Passkey-WebAuthN-Architecture",
+    "description": "Passwordless authentication using Passkeys and WebAuthn",
+    "owner": "Identity Team",
+    "environment": "production",
+    "costCenter": "CC-1234",
+    "compliance": "PCI-DSS"
+  },
+  "nodes": [
     {
-      "owner": "Identity Team",
-      "environment": "production",
-      "costCenter": "CC-1234",
-      "compliance": "PCI-DSS",
-      "version": "0.1"
+      "unique-id": "web-client",
+      "type": "webclient",
+      "node-type": "webclient",
+      "name": "Web Client",
+      "description": "Browser-based client that initiates passkey-based authentication using WebAuthn.",
+      "metadata": [
+        {
+          "owner": "Identity Team",
+          "environment": "production",
+          "compliance": "PCI-DSS"
+        }
+      ]
+    },
+    {
+      "unique-id": "api-gateway",
+      "type": "service",
+      "node-type": "service",
+      "name": "API Gateway",
+      "description": "Edge gateway that terminates HTTPS and forwards authentication requests to backend services.",
+      "metadata": [
+        {
+          "owner": "Identity Team",
+          "environment": "production",
+          "compliance": "PCI-DSS"
+        }
+      ]
+    },
+    {
+      "unique-id": "auth-service",
+      "type": "service",
+      "node-type": "service",
+      "name": "Authentication Service",
+      "description": "Core authentication service that verifies WebAuthn assertions, validates passkeys, and performs OIDC token exchange.",
+      "metadata": [
+        {
+          "owner": "Identity Team",
+          "environment": "production",
+          "compliance": "PCI-DSS"
+        }
+      ],
+      "interfaces": [
+        {
+          "unique-id": "webauthn",
+          "interface-type": "WebAuthn"
+        }
+      ],
+      "controls": {
+        "tls": {
+          "description": "Encrypt all inbound and outbound authentication traffic.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "minimumVersion": "TLS1.2"
+              }
+            }
+          ]
+        },
+        "zero-trust": {
+          "description": "Use strong identity and continuous verification for service calls.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/ZeroTrust",
+              "config": {
+                "serviceIdentity": "mTLS",
+                "leastPrivilege": true,
+                "continuousVerification": true
+              }
+            }
+          ]
+        },
+        "phishing-resistance": {
+          "description": "Require WebAuthn authentication bound to relying party origin.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/PhishingResistance",
+              "config": {
+                "mechanism": "webauthn",
+                "originBound": true,
+                "userVerification": "required"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "passkey-manager",
+      "type": "service",
+      "node-type": "service",
+      "name": "Passkey Manager",
+      "description": "Service responsible for passkey lifecycle management and validation support for WebAuthn.",
+      "metadata": [
+        {
+          "owner": "Identity Team",
+          "environment": "production",
+          "compliance": "PCI-DSS"
+        }
+      ],
+      "controls": {
+        "tls": {
+          "description": "Secure service-to-service communication with strong transport encryption.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "mode": "mTLS"
+              }
+            }
+          ]
+        },
+        "zero-trust": {
+          "description": "Authorize requests using least privilege and continuous verification.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/ZeroTrust",
+              "config": {
+                "serviceIdentity": "mTLS",
+                "leastPrivilege": true,
+                "continuousVerification": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "identity-provider",
+      "type": "service",
+      "node-type": "service",
+      "name": "Identity Provider",
+      "description": "OIDC Identity Provider used for token issuance and identity federation.",
+      "metadata": [
+        {
+          "owner": "Identity Team",
+          "environment": "production",
+          "compliance": "PCI-DSS"
+        }
+      ],
+      "interfaces": [
+        {
+          "unique-id": "oidc",
+          "interface-type": "OIDC"
+        }
+      ],
+      "controls": {
+        "tls": {
+          "description": "Protect OIDC endpoints and token exchanges with TLS.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "minimumVersion": "TLS1.2"
+              }
+            }
+          ]
+        },
+        "zero-trust": {
+          "description": "Ensure token exchanges are authorized and continuously verified.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/ZeroTrust",
+              "config": {
+                "leastPrivilege": true,
+                "continuousVerification": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "web-client-to-api-gateway",
+      "description": "Web Client sends authentication request to API Gateway.",
+      "metadata": [
+        {
+          "criticality": "high"
+        }
+      ],
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "web-client"
+          },
+          "destination": {
+            "node": "api-gateway"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "controls": {
+        "tls": {
+          "description": "Encrypt client-to-edge traffic.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "minimumVersion": "TLS1.2"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "api-gateway-to-auth-service",
+      "description": "API Gateway forwards request to Authentication Service.",
+      "metadata": [
+        {
+          "criticality": "high"
+        }
+      ],
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "api-gateway"
+          },
+          "destination": {
+            "node": "auth-service"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "controls": {
+        "tls": {
+          "description": "Encrypt edge-to-service traffic.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "minimumVersion": "TLS1.2"
+              }
+            }
+          ]
+        },
+        "zero-trust": {
+          "description": "Apply least privilege and continuous verification between gateway and auth service.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/ZeroTrust",
+              "config": {
+                "leastPrivilege": true,
+                "continuousVerification": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "auth-service-to-passkey-manager",
+      "description": "Authentication Service validates passkey using Passkey Manager.",
+      "metadata": [
+        {
+          "criticality": "high",
+          "sensitivity": "high"
+        }
+      ],
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "auth-service"
+          },
+          "destination": {
+            "node": "passkey-manager"
+          }
+        }
+      },
+      "protocol": "mTLS",
+      "controls": {
+        "tls": {
+          "description": "Require mutually authenticated TLS for passkey validation requests.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "mode": "mTLS"
+              }
+            }
+          ]
+        },
+        "zero-trust": {
+          "description": "Enforce strong service identity and least privilege for passkey operations.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/ZeroTrust",
+              "config": {
+                "serviceIdentity": "mTLS",
+                "leastPrivilege": true,
+                "continuousVerification": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "auth-service-to-identity-provider",
+      "description": "Authentication Service performs OIDC token exchange with Identity Provider.",
+      "metadata": [
+        {
+          "criticality": "high",
+          "sensitivity": "high",
+          "applicationProtocol": "OIDC",
+          "requestedProtocol": "HTTPS/OIDC"
+        }
+      ],
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "auth-service"
+          },
+          "destination": {
+            "node": "identity-provider"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "controls": {
+        "tls": {
+          "description": "Protect token exchange with TLS.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/TLS",
+              "config": {
+                "minimumVersion": "TLS1.2"
+              }
+            }
+          ]
+        },
+        "zero-trust": {
+          "description": "Apply least privilege and continuous verification for token exchange.",
+          "requirements": [
+            {
+              "requirement-url": "https://controls.calm.dev/ZeroTrust",
+              "config": {
+                "leastPrivilege": true,
+                "continuousVerification": true
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "controls": {
-    "mfa": {
-      "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
+    "MFA": {
+      "description": "Multi-factor authentication using passkeys/WebAuthn.",
       "requirements": [
         {
-          "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
+          "requirement-url": "https://controls.calm.dev/MFA",
           "config": {
-            "mechanism": "passkey-webauthn",
-            "policy": "required",
-            "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
+            "appliedTo": "auth-flow-001"
           }
         }
       ]
     },
-    "tls": {
-      "description": "Encrypt all external and internal HTTP traffic using TLS.",
+    "TLS": {
+      "description": "Transport encryption for external and internal communication.",
       "requirements": [
         {
-          "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
+          "requirement-url": "https://controls.calm.dev/TLS",
           "config": {
-            "external": {
-              "protocol": "HTTPS"
-            },
-            "internal": {
-              "protocol": "HTTPS"
-            },
-            "minimumVersion": "TLS1.2"
+            "appliedTo": "auth-flow-001"
           }
         }
       ]
     },
-    "zero-trust": {
-      "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
+    "ZeroTrust": {
+      "description": "Zero-trust controls for service-to-service calls.",
       "requirements": [
         {
-          "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
+          "requirement-url": "https://controls.calm.dev/ZeroTrust",
           "config": {
-            "serviceIdentity": "mTLS",
-            "leastPrivilege": true,
-            "continuousVerification": true
+            "appliedTo": "auth-flow-001"
           }
         }
       ]
     },
-    "phishing-resistance": {
-      "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
+    "PhishingResistance": {
+      "description": "Phishing-resistant authentication using origin-bound WebAuthn passkeys.",
       "requirements": [
         {
-          "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
+          "requirement-url": "https://controls.calm.dev/PhishingResistance",
           "config": {
-            "mechanism": "webauthn",
-            "originBound": true,
-            "userVerification": "required"
+            "appliedTo": "auth-flow-001"
           }
         }
       ]
@@ -74,874 +410,52 @@
     "instructions/ADR-001.md",
     "instructions/ADR-002.md"
   ],
-  "nodes": [
-    {
-      "unique-id": "web-client",
-      "node-type": "webclient",
-      "name": "Web Client",
-      "description": "Browser client that initiates WebAuthn ceremonies for passkey-based authentication.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "interfaces": [
-        {
-          "unique-id": "web-client-webauthn"
-        }
-      ]
-    },
-    {
-      "unique-id": "api-gateway",
-      "node-type": "service",
-      "name": "API Gateway",
-      "description": "Edge gateway that terminates HTTPS and routes authentication requests to internal services.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "interfaces": [
-        {
-          "unique-id": "api-gateway-https"
-        },
-        {
-          "unique-id": "api-gateway-internal-https"
-        }
-      ]
-    },
-    {
-      "unique-id": "auth-service",
-      "node-type": "service",
-      "name": "Authentication Service",
-      "description": "Validates WebAuthn assertions, interacts with passkey storage, and performs OIDC token exchanges.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "interfaces": [
-        {
-          "unique-id": "auth-service-https"
-        },
-        {
-          "unique-id": "auth-service-mtls"
-        },
-        {
-          "unique-id": "auth-service-oidc-client"
-        }
-      ]
-    },
-    {
-      "unique-id": "passkey-manager",
-      "node-type": "service",
-      "name": "Passkey Manager",
-      "description": "Stores and manages passkey public keys and metadata for WebAuthn verification.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "interfaces": [
-        {
-          "unique-id": "passkey-manager-mtls"
-        }
-      ]
-    },
-    {
-      "unique-id": "identity-provider",
-      "node-type": "service",
-      "name": "Identity Provider",
-      "description": "OIDC provider that issues tokens after successful authentication.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "interfaces": [
-        {
-          "unique-id": "identity-provider-oidc"
-        }
-      ]
-    }
-  ],
-  "relationships": [
-    {
-      "unique-id": "web-to-gateway",
-      "description": "Client sends authentication requests to gateway.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "web-client",
-            "interfaces": [
-              "web-client-webauthn"
-            ]
-          },
-          "destination": {
-            "node": "api-gateway",
-            "interfaces": [
-              "api-gateway-https"
-            ]
-          }
-        }
-      },
-      "protocol": "HTTPS"
-    },
-    {
-      "unique-id": "gateway-to-auth",
-      "description": "Gateway forwards authentication requests to authentication service.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "api-gateway",
-            "interfaces": [
-              "api-gateway-internal-https"
-            ]
-          },
-          "destination": {
-            "node": "auth-service",
-            "interfaces": [
-              "auth-service-https"
-            ]
-          }
-        }
-      },
-      "protocol": "HTTPS"
-    },
-    {
-      "unique-id": "auth-to-passkey",
-      "description": "Authentication service verifies and manages passkey material via passkey manager.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "auth-service",
-            "interfaces": [
-              "auth-service-mtls"
-            ]
-          },
-          "destination": {
-            "node": "passkey-manager",
-            "interfaces": [
-              "passkey-manager-mtls"
-            ]
-          }
-        }
-      },
-      "protocol": "mTLS"
-    },
-    {
-      "unique-id": "auth-to-idp",
-      "description": "Authentication service exchanges authorization context for OIDC tokens.",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "auth-service",
-            "interfaces": [
-              "auth-service-oidc-client"
-            ]
-          },
-          "destination": {
-            "node": "identity-provider",
-            "interfaces": [
-              "identity-provider-oidc"
-            ]
-          }
-        }
-      },
-      "protocol": "HTTPS"
-    }
-  ],
   "flows": [
     {
       "unique-id": "auth-flow-001",
       "name": "Authentication Flow",
-      "description": "Sequence of steps for passwordless authentication using Passkeys and WebAuthn",
-      "metadata": [
-        {
-          "owner": "Identity Team",
-          "environment": "production",
-          "costCenter": "CC-1234",
-          "compliance": "PCI-DSS",
-          "version": "0.1"
-        }
-      ],
-      "controls": {
-        "mfa": {
-          "description": "Use multi-factor authentication via WebAuthn passkeys (possession + biometric/PIN) to authenticate users.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/mfa",
-              "config": {
-                "mechanism": "passkey-webauthn",
-                "policy": "required",
-                "notes": "Passkeys provide phishing-resistant MFA in supported authenticators."
-              }
-            }
-          ]
-        },
-        "tls": {
-          "description": "Encrypt all external and internal HTTP traffic using TLS.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/tls",
-              "config": {
-                "external": {
-                  "protocol": "HTTPS"
-                },
-                "internal": {
-                  "protocol": "HTTPS"
-                },
-                "minimumVersion": "TLS1.2"
-              }
-            }
-          ]
-        },
-        "zero-trust": {
-          "description": "Apply zero-trust principles for service-to-service calls (strong identity, least privilege, and continuous verification).",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/zero-trust",
-              "config": {
-                "serviceIdentity": "mTLS",
-                "leastPrivilege": true,
-                "continuousVerification": true
-              }
-            }
-          ]
-        },
-        "phishing-resistance": {
-          "description": "Ensure authentication is resistant to phishing by using WebAuthn passkeys bound to relying party origins.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.1/controls/phishing-resistance",
-              "config": {
-                "mechanism": "webauthn",
-                "originBound": true,
-                "userVerification": "required"
-              }
-            }
-          ]
-        }
-      },
+      "description": "Sequence of steps for passwordless authentication using Passkeys and WebAuthn.",
       "transitions": [
         {
-          "relationship-unique-id": "web-to-gateway",
+          "relationship-unique-id": "web-client-to-api-gateway",
           "sequence-number": 1,
-          "description": "Send authentication request",
+          "description": "WebClient to APIGateway: Send authentication request",
           "direction": "source-to-destination"
         },
         {
-          "relationship-unique-id": "gateway-to-auth",
+          "relationship-unique-id": "api-gateway-to-auth-service",
           "sequence-number": 2,
-          "description": "Forward request",
+          "description": "APIGateway to AuthService: Forward request",
           "direction": "source-to-destination"
         },
         {
-          "relationship-unique-id": "auth-to-passkey",
+          "relationship-unique-id": "auth-service-to-passkey-manager",
           "sequence-number": 3,
-          "description": "Validate passkey",
+          "description": "AuthService to PasskeyManager: Validate passkey",
           "direction": "source-to-destination"
         },
         {
-          "relationship-unique-id": "auth-to-idp",
+          "relationship-unique-id": "auth-service-to-identity-provider",
           "sequence-number": 4,
-          "description": "OIDC token exchange",
+          "description": "AuthService to IdentityProvider: OIDC token exchange",
           "direction": "source-to-destination"
         },
         {
-          "relationship-unique-id": "auth-to-idp",
+          "relationship-unique-id": "auth-service-to-identity-provider",
           "sequence-number": 5,
-          "description": "Return token",
+          "description": "IdentityProvider to AuthService: Return token",
           "direction": "destination-to-source"
         },
         {
-          "relationship-unique-id": "gateway-to-auth",
+          "relationship-unique-id": "api-gateway-to-auth-service",
           "sequence-number": 6,
-          "description": "Return response",
+          "description": "AuthService to APIGateway: Return response",
           "direction": "destination-to-source"
         },
         {
-          "relationship-unique-id": "web-to-gateway",
+          "relationship-unique-id": "web-client-to-api-gateway",
           "sequence-number": 7,
-          "description": "Deliver authentication result",
+          "description": "APIGateway to WebClient: Deliver authentication result",
           "direction": "destination-to-source"
         }
       ]
