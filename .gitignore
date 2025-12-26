@@ -41,7 +41,6 @@ bld/
 #!**/[Bb]in/*.refresh
 **/*-out/
 **/docs/
-**/instructions/
 
 
 # Visual Studio 2015/2017 cache/options directory
