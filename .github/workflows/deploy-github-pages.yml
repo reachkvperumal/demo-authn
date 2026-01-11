@@ -2,7 +2,7 @@ name: Deploy Docusaurus to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +28,17 @@ jobs:
           cache: npm
           cache-dependency-path: docify-out/package-lock.json
 
+      - name: Compute site URLs
+        id: site
+        shell: bash
+        run: |
+          if [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
+            echo "base_url=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_url=/${{ github.event.repository.name }}/" >> "$GITHUB_OUTPUT"
+          fi
+          echo "site_url=https://${{ github.repository_owner }}.github.io" >> "$GITHUB_OUTPUT"
+
       - name: Install deps
         working-directory: docify-out
         run: npm ci
@@ -35,8 +46,8 @@ jobs:
       - name: Build site
         working-directory: docify-out
         env:
-          BASE_URL: /${{ github.event.repository.name }}/
-          SITE_URL: https://${{ github.repository_owner }}.github.io
+          BASE_URL: ${{ steps.site.outputs.base_url }}
+          SITE_URL: ${{ steps.site.outputs.site_url }}
         run: npm run build
 
       - name: Upload Pages artifact
