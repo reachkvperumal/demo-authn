@@ -1,28 +1,13 @@
 /* eslint-disable no-undef */
-
-const githubRepo = process.env.GITHUB_REPOSITORY;
-const [githubOwner, githubProject] = githubRepo ? githubRepo.split('/') : [undefined, undefined];
-
-const siteUrl =
-    process.env.SITE_URL ||
-    (githubOwner ? `https://${githubOwner}.github.io` : 'http://localhost');
-
-const siteBaseUrl =
-    process.env.BASE_URL ||
-    (githubProject ? `/${githubProject}/` : '/');
-
-const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-
 module.exports = {
     title: 'My Docusaurus Docs',
     tagline: 'Generated documentation from CALM',
-    url: siteUrl,
-    baseUrl: siteBaseUrl,
-    onBrokenLinks: isCI ? 'warn' : 'throw',
-    onBrokenMarkdownLinks: 'warn',
+    url: 'http://localhost',
+    baseUrl: '/',
+    onBrokenLinks: 'throw',
     favicon: 'img/favicon.ico',
-    organizationName: githubOwner || 'my-org',
-    projectName: githubProject || 'calm-docs',
+    organizationName: 'my-org',
+    projectName: 'calm-docs',
 
     themeConfig: {
         navbar: {
@@ -38,10 +23,13 @@ module.exports = {
         '@docusaurus/theme-mermaid',
     ],
     markdown: {
-        mermaid: true
+        mermaid: true,
+        hooks: {
+            onBrokenMarkdownLinks: 'warn'
+        }
     },
     stylesheets: [
-        'css/custom.css'
+        '/css/custom.css'
     ],
     presets: [
         [

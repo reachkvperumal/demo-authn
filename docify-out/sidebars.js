@@ -32,6 +32,7 @@ module.exports = {
             items: [
                 'flows/auth-flow-001'
             ],
-        }
-    ]
+        },
+    ],
 };
+
